@@ -1,0 +1,14 @@
+# База данных PostgreSQL 16.6. Запуск: docker compose up -d
+services:
+  db:
+    image: postgres:16.6
+    environment:
+      POSTGRES_USER: tester
+      POSTGRES_PASSWORD: tester
+      POSTGRES_DB: tester
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:

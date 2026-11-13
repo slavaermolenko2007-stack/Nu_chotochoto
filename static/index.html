@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Автотесты сайта</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f4f5f7; color: #222; }
+  header { background: #e30611; color: #fff; padding: 12px 24px; display: flex; gap: 24px; align-items: center; }
+  header h1 { font-size: 20px; margin: 0 24px 0 0; }
+  header button { background: transparent; color: #fff; border: 0; font-size: 16px; padding: 6px 12px; cursor: pointer; border-radius: 4px; }
+  header button.active { background: rgba(255,255,255,.25); }
+  main { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid #e5e5e5; vertical-align: middle; }
+  th { background: #fafafa; font-size: 13px; color: #555; }
+  input, select, textarea { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font: inherit; }
+  input:disabled { background: #eee; }
+  button.btn { padding: 6px 12px; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; font: inherit; }
+  button.btn:hover { background: #f0f0f0; }
+  button.primary { background: #e30611; color: #fff; border-color: #e30611; }
+  button.primary:hover { background: #c40510; }
+  button.danger { color: #c40510; }
+  .row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+  .grow { flex: 1; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-size: 13px; color: #fff; white-space: nowrap; }
+  .passed { background: #2e9e4f; } .failed { background: #d93025; }
+  .running { background: #e69500; } .skipped { background: #999; }
+  .error { background: #fdecea; color: #a1190f; padding: 8px 12px; border-radius: 4px; margin-bottom: 12px; }
+  .clickable { cursor: pointer; } .clickable:hover { background: #fafafa; }
+  .muted { color: #777; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Автотесты сайта</h1>
+    <button :class="{active: tab === 'scenarios'}" @click="tab = 'scenarios'">Сценарии</button>
+    <button :class="{active: tab === 'runs'}" @click="openRuns">Результаты</button>
+  </header>
+
+  <main>
+    <div v-if="error" class="error">{{ error }}</div>
+
+    <!-- ===== Вкладка «Сценарии»: список ===== -->
+    <section v-if="tab === 'scenarios' && !editing">
+      <div class="row">
+        <div class="grow muted">Сценарий — набор шагов, который выполняется в браузере по порядку.</div>
+        <button class="btn primary" @click="newScenario">+ Новый сценарий</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>Название</th><th>Описание</th><th>Шагов</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="s in scenarios" :key="s.id">
+              <td><b>{{ s.name }}</b></td>
+              <td>{{ s.description }}</td>
+              <td>{{ s.steps.length }}</td>
+              <td style="white-space: nowrap">
+                <button class="btn primary" @click="runScenario(s)">▶ Запустить</button>
+                <button class="btn" @click="editScenario(s)">Изменить</button>
+                <button class="btn danger" @click="removeScenario(s)">Удалить</button>
+              </td>
+            </tr>
+            <tr v-if="!scenarios.length"><td colspan="4" class="muted">Сценариев пока нет</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== Вкладка «Сценарии»: редактор ===== -->
+    <section v-if="tab === 'scenarios' && editing">
+      <div class="card">
+        <h2 style="margin-top: 0">{{ editing.id ? 'Изменение сценария' : 'Новый сценарий' }}</h2>
+        <div class="row">
+          <div class="grow"><label>Название<input v-model="editing.name"></label></div>
+        </div>
+        <div class="row">
+          <div class="grow"><label>Описание<input v-model="editing.description"></label></div>
+        </div>
+        <table>
+          <thead><tr><th>№</th><th style="width: 25%">Действие</th><th>Селектор</th><th>Значение</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="(step, i) in editing.steps" :key="i">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <select v-model="step.action">
+                  <option v-for="(info, key) in actions" :key="key" :value="key">{{ info.label }}</option>
+                </select>
+              </td>
+              <td><input v-model="step.target" :disabled="!hint(step, 'target')" :placeholder="hint(step, 'target') || '—'"></td>
+              <td><input v-model="step.value" :disabled="!hint(step, 'value')" :placeholder="hint(step, 'value') || '—'"></td>
+              <td style="white-space: nowrap">
+                <button class="btn" @click="moveStep(i, -1)" title="Выше">↑</button>
+                <button class="btn" @click="moveStep(i, 1)" title="Ниже">↓</button>
+                <button class="btn danger" @click="editing.steps.splice(i, 1)" title="Удалить шаг">✕</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="row" style="margin-top: 12px">
+          <button class="btn" @click="addStep">+ Добавить шаг</button>
+          <div class="grow"></div>
+          <button class="btn" @click="editing = null">Отмена</button>
+          <button class="btn primary" @click="saveScenario">Сохранить</button>
+        </div>
+        <p class="muted">Селектор — CSS-адрес элемента на странице (например <code>#search</code> или <code>.btn-buy</code>).
+          Его можно найти в браузере: ПКМ на элементе → «Просмотреть код» → ПКМ на теге → Copy → Copy selector.</p>
+      </div>
+    </section>
+
+    <!-- ===== Вкладка «Результаты» ===== -->
+    <section v-if="tab === 'runs'">
+      <div class="card">
+        <table>
+          <thead><tr><th>№</th><th>Сценарий</th><th>Статус</th><th>Шаги (успешно / всего)</th><th>Начало</th><th>Длительность</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="r in runs" :key="r.id" class="clickable" @click="openRun(r.id)">
+              <td>{{ r.id }}</td>
+              <td>{{ r.scenario_name }}</td>
+              <td><span class="badge" :class="r.status">{{ statusName[r.status] }}</span></td>
+              <td>{{ r.passed }} / {{ r.total }}</td>
+              <td>{{ fmtDate(r.started_at) }}</td>
+              <td>{{ duration(r) }}</td>
+              <td><button class="btn danger" @click.stop="removeRun(r)">Удалить</button></td>
+            </tr>
+            <tr v-if="!runs.length"><td colspan="7" class="muted">Запусков пока нет</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card" v-if="selected">
+        <div class="row">
+          <h3 class="grow" style="margin: 0">Запуск №{{ selected.id }}: {{ selected.scenario_name }}
+            <span class="badge" :class="selected.status">{{ statusName[selected.status] }}</span></h3>
+          <a class="btn" :href="'/api/runs/' + selected.id + '/export.csv'">Скачать CSV</a>
+        </div>
+        <table>
+          <thead><tr><th>№</th><th>Действие</th><th>Селектор</th><th>Значение</th><th>Результат</th><th>Время, мс</th><th>Сообщение</th></tr></thead>
+          <tbody>
+            <tr v-for="s in selected.steps" :key="s.id">
+              <td>{{ s.position }}</td>
+              <td>{{ actions[s.action] ? actions[s.action].label : s.action }}</td>
+              <td>{{ s.target }}</td>
+              <td>{{ s.value }}</td>
+              <td><span class="badge" :class="s.status">{{ statusName[s.status] }}</span></td>
+              <td>{{ s.duration_ms }}</td>
+              <td>{{ s.message }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/vue@3.5.13/dist/vue.global.prod.js"></script>
+<script>
+const { createApp } = Vue;
+
+createApp({
+  data() {
+    return {
+      tab: 'scenarios',
+      scenarios: [],
+      runs: [],
+      selected: null,   // открытый запуск с шагами
+      editing: null,    // сценарий в редакторе (null = показываем список)
+      actions: {},
+      error: '',
+      statusName: { passed: 'Пройден', failed: 'Провален', running: 'Выполняется', skipped: 'Пропущен' },
+    };
+  },
+
+  async mounted() {
+    await this.safe(async () => {
+      this.actions = await this.api('/api/actions');
+      await this.loadScenarios();
+    });
+    // Раз в 2 секунды обновляем результаты, пока идёт тест
+    setInterval(() => {
+      if (this.tab !== 'runs') return;
+      this.safe(async () => {
+        await this.loadRuns();
+        if (this.selected && this.selected.status === 'running') await this.openRun(this.selected.id);
+      });
+    }, 2000);
+  },
+
+  methods: {
+    // Запрос к серверу. При ошибке бросает понятное сообщение
+    async api(url, options = {}) {
+      const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(typeof body.detail === 'string' ? body.detail : 'Проверьте, что название и все шаги заполнены');
+      }
+      return res.status === 204 ? null : res.json();
+    },
+    // Выполняет действие и показывает ошибку на экране, если она случилась
+    async safe(fn) {
+      try { this.error = ''; await fn(); } catch (e) { this.error = e.message; }
+    },
+    hint(step, field) { return this.actions[step.action] ? this.actions[step.action][field] : null; },
+    fmtDate(s) { return s ? new Date(s).toLocaleString('ru-RU') : ''; },
+    duration(r) {
+      if (!r.finished_at) return '…';
+      return ((new Date(r.finished_at) - new Date(r.started_at)) / 1000).toFixed(1) + ' с';
+    },
+
+    // ----- Сценарии -----
+    async loadScenarios() { this.scenarios = await this.api('/api/scenarios'); },
+    newScenario() {
+      this.editing = { id: null, name: '', description: '', steps: [{ action: 'open', target: '', value: '' }] };
+    },
+    editScenario(s) { this.editing = JSON.parse(JSON.stringify(s)); },
+    addStep() { this.editing.steps.push({ action: 'click', target: '', value: '' }); },
+    moveStep(i, d) {
+      const steps = this.editing.steps, j = i + d;
+      if (j < 0 || j >= steps.length) return;
+      [steps[i], steps[j]] = [steps[j], steps[i]];
+    },
+    saveScenario() {
+      return this.safe(async () => {
+        const e = this.editing;
+        const body = JSON.stringify({ name: e.name, description: e.description, steps: e.steps });
+        if (e.id) await this.api('/api/scenarios/' + e.id, { method: 'PUT', body });
+        else await this.api('/api/scenarios', { method: 'POST', body });
+        this.editing = null;
+        await this.loadScenarios();
+      });
+    },
+    removeScenario(s) {
+      if (!confirm('Удалить сценарий «' + s.name + '»? История запусков сохранится.')) return;
+      return this.safe(async () => {
+        await this.api('/api/scenarios/' + s.id, { method: 'DELETE' });
+        await this.loadScenarios();
+      });
+    },
+    runScenario(s) {
+      return this.safe(async () => {
+        const { run_id } = await this.api('/api/scenarios/' + s.id + '/run', { method: 'POST' });
+        this.tab = 'runs';
+        await this.loadRuns();
+        await this.openRun(run_id);
+      });
+    },
+
+    // ----- Результаты -----
+    async loadRuns() { this.runs = await this.api('/api/runs'); },
+    openRuns() {
+      this.tab = 'runs';
+      return this.safe(() => this.loadRuns());
+    },
+    async openRun(id) { this.selected = await this.api('/api/runs/' + id); },
+    removeRun(r) {
+      if (!confirm('Удалить запуск №' + r.id + '?')) return;
+      return this.safe(async () => {
+        await this.api('/api/runs/' + r.id, { method: 'DELETE' });
+        if (this.selected && this.selected.id === r.id) this.selected = null;
+        await this.loadRuns();
+      });
+    },
+  },
+}).mount('#app');
+</script>
+</body>
+</html>
