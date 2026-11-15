@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\.venv",
+    "\\app",
+    "\\app\\__pycache__",
+    "\\env",
+    "\\static"
+  ],
+  "SelectedNode": "\\app\\runner.py",
+  "PreviewInSolutionExplorer": false
+}
