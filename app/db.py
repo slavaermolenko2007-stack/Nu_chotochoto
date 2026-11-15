@@ -15,7 +15,7 @@ SEED_SCENARIOS = [
         "name": "Открытие главной страницы",
         "description": "Сайт открывается и страница отображается",
         "steps": [
-            {"action": "open", "target": "", "value": "https://shop.3-test.mts.by"},
+            {"action": "open", "target": "", "value": "https://shop3-test.mts.by"},
             {"action": "assert_visible", "target": "body", "value": ""},
             {"action": "assert_url", "target": "", "value": "mts.by"},
         ],
@@ -24,7 +24,7 @@ SEED_SCENARIOS = [
         "name": "Демо: тест с ошибкой",
         "description": "Специально падает, чтобы показать, как выглядит отчёт об ошибке",
         "steps": [
-            {"action": "open", "target": "", "value": "https://shop.3-test.mts.by"},
+            {"action": "open", "target": "", "value": "https://shop3-test.mts.by"},
             {"action": "assert_visible", "target": "#element-which-does-not-exist", "value": ""},
             {"action": "assert_title", "target": "", "value": "этот шаг будет пропущен"},
         ],

@@ -12,12 +12,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from . import db
 
-TIMEOUT = int(os.getenv("STEP_TIMEOUT", "10"))  # сколько секунд ждать элемент
-HEADLESS = os.getenv("HEADLESS", "1") == "1"    # 0 = показывать окно браузера
+TIMEOUT = int(os.getenv("STEP_TIMEOUT", "10"))  
+HEADLESS = os.getenv("HEADLESS", "1") == "1"    
 
-# Доступные действия. None в подсказке значит «это поле для действия не нужно»
+
 ACTIONS = {
-    "open":           {"label": "Открыть страницу",           "target": None,           "value": "URL, например https://shop.3-test.mts.by"},
+    "open":           {"label": "Открыть страницу",           "target": None,           "value": "URL, например https://shop3-test.mts.by"},
     "click":          {"label": "Кликнуть по элементу",       "target": "CSS-селектор", "value": None},
     "type":           {"label": "Ввести текст",               "target": "CSS-селектор", "value": "Текст для ввода"},
     "press_enter":    {"label": "Нажать Enter в поле",        "target": "CSS-селектор", "value": None},
@@ -36,7 +36,7 @@ def make_driver() -> webdriver.Chrome:
     options.add_argument("--window-size=1366,900")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # Selenium 4 сам скачает нужный драйвер, нужен только установленный Chrome
+   
     return webdriver.Chrome(options=options)
 
 
@@ -44,12 +44,24 @@ def execute_step(driver: webdriver.Chrome, step: dict) -> None:
     """Выполняет один шаг. Если что-то не так, бросает исключение."""
     action, target, value = step["action"], step["target"], step["value"]
     wait = WebDriverWait(driver, TIMEOUT)
-    locator = (By.CSS_SELECTOR, target)
+    
+    if target.startswith("//") or target.startswith("("):
+        locator = (By.XPATH, target)
+    else:
+        locator = (By.CSS_SELECTOR, target)
 
     if action == "open":
         driver.get(value)
     elif action == "click":
-        wait.until(EC.element_to_be_clickable(locator)).click()
+        element = wait.until(EC.element_to_be_clickable(locator))
+        
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+        time.sleep(0.5) 
+        try:
+            element.click()
+        except Exception:
+            
+            driver.execute_script("arguments[0].click();", element)
     elif action == "type":
         field = wait.until(EC.visibility_of_element_located(locator))
         field.clear()
