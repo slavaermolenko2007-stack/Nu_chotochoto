@@ -165,8 +165,8 @@ createApp({
       tab: 'scenarios',
       scenarios: [],
       runs: [],
-      selected: null,   // открытый запуск с шагами
-      editing: null,    // сценарий в редакторе (null = показываем список)
+      selected: null,   
+      editing: null,    
       actions: {},
       error: '',
       statusName: { passed: 'Пройден', failed: 'Провален', running: 'Выполняется', skipped: 'Пропущен' },
@@ -178,7 +178,7 @@ createApp({
       this.actions = await this.api('/api/actions');
       await this.loadScenarios();
     });
-    // Раз в 2 секунды обновляем результаты, пока идёт тест
+    
     setInterval(() => {
       if (this.tab !== 'runs') return;
       this.safe(async () => {
@@ -189,7 +189,7 @@ createApp({
   },
 
   methods: {
-    // Запрос к серверу. При ошибке бросает понятное сообщение
+  
     async api(url, options = {}) {
       const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
       if (!res.ok) {
@@ -198,7 +198,7 @@ createApp({
       }
       return res.status === 204 ? null : res.json();
     },
-    // Выполняет действие и показывает ошибку на экране, если она случилась
+   
     async safe(fn) {
       try { this.error = ''; await fn(); } catch (e) { this.error = e.message; }
     },
@@ -209,7 +209,7 @@ createApp({
       return ((new Date(r.finished_at) - new Date(r.started_at)) / 1000).toFixed(1) + ' с';
     },
 
-    // ----- Сценарии -----
+   
     async loadScenarios() { this.scenarios = await this.api('/api/scenarios'); },
     newScenario() {
       this.editing = { id: null, name: '', description: '', steps: [{ action: 'open', target: '', value: '' }] };
@@ -247,7 +247,7 @@ createApp({
       });
     },
 
-    // ----- Результаты -----
+    
     async loadRuns() { this.runs = await this.api('/api/runs'); },
     openRuns() {
       this.tab = 'runs';

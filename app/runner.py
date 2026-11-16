@@ -118,7 +118,7 @@ def run_scenario(run_id: int, steps: list[dict]) -> None:
     try:
         try:
             driver = make_driver()
-        except Exception as error:  # noqa: BLE001 - браузер мог не запуститься по любой причине
+        except Exception as error:  
             driver_error = _short_error(error)
 
         for position, step in enumerate(steps, start=1):
@@ -135,14 +135,14 @@ def run_scenario(run_id: int, steps: list[dict]) -> None:
             except TimeoutException:
                 status = "failed"
                 message = f"Не дождались за {TIMEOUT} с: {step['target'] or step['value']}"
-            except Exception as error:  # noqa: BLE001 - любая ошибка шага = шаг провален
+            except Exception as error:  
                 status, message = "failed", _short_error(error)
 
             duration_ms = int((time.monotonic() - started) * 1000)
             _save_step(run_id, position, step, status, message, duration_ms)
             if status == "failed":
                 run_status = "failed"
-    except Exception:  # noqa: BLE001 - например, пропала база данных
+    except Exception: 
         run_status = "failed"
     finally:
         if driver is not None:

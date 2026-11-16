@@ -1,4 +1,4 @@
--- Сценарии тестирования (шаги хранятся списком JSON внутри сценария)
+
 CREATE TABLE IF NOT EXISTS scenarios (
     id          SERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS scenarios (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Запуски сценариев. Название копируем, чтобы история жила после удаления сценария
 CREATE TABLE IF NOT EXISTS runs (
     id            SERIAL PRIMARY KEY,
     scenario_id   INT REFERENCES scenarios(id) ON DELETE SET NULL,
@@ -18,7 +17,7 @@ CREATE TABLE IF NOT EXISTS runs (
     finished_at   TIMESTAMPTZ
 );
 
--- Результат каждого шага в запуске
+
 CREATE TABLE IF NOT EXISTS run_steps (
     id          SERIAL PRIMARY KEY,
     run_id      INT NOT NULL REFERENCES runs(id) ON DELETE CASCADE,

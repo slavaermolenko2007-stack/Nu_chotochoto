@@ -9,7 +9,6 @@ from psycopg.types.json import Jsonb
 
 DSN = os.getenv("DATABASE_URL", "postgresql://tester:tester@localhost:5432/tester")
 
-# Стартовые сценарии, чтобы сразу было что запускать
 SEED_SCENARIOS = [
     {
         "name": "Открытие главной страницы",
@@ -44,7 +43,7 @@ def init_db() -> None:
     schema = (Path(__file__).parent / "schema.sql").read_text(encoding="utf-8")
     with get_conn() as conn:
         conn.execute(schema)
-        # Если сервер выключили во время теста, запуск навсегда остался бы «выполняется»
+       
         conn.execute(
             "UPDATE runs SET status = 'failed', finished_at = now() WHERE status = 'running'"
         )
