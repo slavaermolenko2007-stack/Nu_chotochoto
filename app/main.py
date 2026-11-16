@@ -145,7 +145,7 @@ def export_run(run_id: int):
     for s in run["steps"]:
         writer.writerow([s["position"], ACTIONS[s["action"]]["label"], s["target"],
                          s["value"], s["status"], s["message"], s["duration_ms"]])
-    # BOM в начале, чтобы Excel правильно показал русские буквы
+   
     return Response(
         content="\ufeff" + out.getvalue(),
         media_type="text/csv; charset=utf-8",
@@ -159,5 +159,5 @@ def delete_run(run_id: int):
         conn.execute("DELETE FROM runs WHERE id = %s", (run_id,))
 
 
-# Страница интерфейса. Подключаем последней, чтобы не перекрыть /api
+
 app.mount("/", StaticFiles(directory=Path(__file__).parent.parent / "static", html=True))
